@@ -74,9 +74,22 @@ def _sign_data(secret, data):
     return binascii.b2a_base64(sha1_hash.digest())[:-1].decode('utf8')
 
 
+def _local_sha1(data):
+    """
+    Calculate hash and avoid the error "TypeError: Unicode-objects must be encoded before hashing"
+    :param data: the string supporting normal and unicode format
+    :return: hash of the data
+    """
+    try:
+        local_hash = sha1(data).hexdigest()
+    except TypeError:
+        local_hash = sha1(data.encode('utf-8')).hexdigest()
+    return local_hash
+
+
 def _hash_body(context):
     body, _ = context.renderer.encode_params(context.body_params, files=context.files)
-    return sha1(body).hexdigest()
+    return _local_sha1(body)
 
 
 def _hash_file(context):
@@ -85,7 +98,7 @@ def _hash_file(context):
 
     for param in files:
         _, fdata, _, _ = guess_file_name_stream_type_header(files[param])
-        return sha1(fdata).hexdigest()
+        return _local_sha1(fdata)
 
 
 def _get_utc():
